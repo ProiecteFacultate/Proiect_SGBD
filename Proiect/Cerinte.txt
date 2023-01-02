@@ -1,0 +1,19 @@
+6. Dandu-se un array ce contine orasele "Chisinau", "Craiova", "Bucuresti", "Iasi", "Bacau", "Kiev", "Beijing" sa se afiseze pentru fiecare client daca are cel putin o 
+adresa in cel putin un oras care se regaseste in tabelul Adrese, dar nu se regaseste printre cele data. Pentru fiecare client, pentru fiecare astfel de oras sa se 
+afiseze emailul si orasul respectiv, iar daca nu exista niciun astfel de oras sa se afiseze "Nu exista niciun oras".
+
+7. Sa se afiseze numele si prenumele muncitorilor care au fost sunt desemnati sa intervina la interventii survenite in urma plangerilor depuse de clienti care au cel
+putin 'v_numar_minim_plangeri' plangeri depuse in urma in care au fost interventii (sau urmeaza sa fie), 'v_numar_minim_plangeri' fiind un parametru al procedurii, 
+cat si numele de utilizator al acestor clienti. Daca despre un anumit muncitor nu se cunosc informatii (numele si prenumele) nu se va afisa nimic. Daca pentru un
+client nu se cunosc informatii despre niciunul dintre muncitorii desemnati sa-i rezolve plangerile, sa se precizeze acest lucru. Daca nu exista niciun client care
+sa fi depus cel putin 'v_numar_minim_plangeri' in urma carora sa existe interventii, sa se precizeze acest lucru.
+
+8. Sa se reduca totalul facturilor clientilor cu 'v_reducere'(parametru al functiei) si sa se afiseza reducerea totala a facturilor.
+Daca factura a fost deja platita nu se va intampla nimic. 
+Daca termenul de plata a fost depasit, iar factura nu a fost platita, totalul nu se va reduce, dar termenul de plata va fi extins pentru 1 Ianuarie 2024.
+Daca termenul de plata nu a fost depasit, dar totalul facturii este mai mic decat reducerea, atunci statusul facturii va deveni 'Platit'.
+
+9. Dandu-se un nume si un prenume ca parametrii ai procedurii, sa se gaseasca clientul, sa se actualizeze toate facturile sale ca fiind platite, si sa se afiseze
+cardurile  (numarul si codul de securitate al acestora) detinute de acest client, daca factura pe numele lui emisa pe Romania (daca sunt mai multe astfel de facturi 
+cel putin una trebuie sa aiba statusul 'Neplatit') este Neplatita si soldul contului mai mare de 2000. (conditia de daca se aplica doar pt afisarea 
+cardurilor, nu si pt actualizarea facturilor)
