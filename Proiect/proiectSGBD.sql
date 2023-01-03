@@ -307,6 +307,8 @@ INSERT INTO Carduri_Bancare Values (16, 13, 14, '2222222222222233', TO_DATE('12-
 INSERT INTO Adrese VALUES (1, 14, 'Romania', 'Craiova', 'Stadionului', 80);
 INSERT INTO Facturi VALUES (1, 1, 14, 2000, TO_DATE('12-DEC-2020', 'DD-MON-YYYY'), TO_DATE('15-FEB-2025', 'DD-MON-YYYY'), 'Neplatit');
 INSERT INTO Facturi VALUES (2, 1, 14, 3000, TO_DATE('01-APR-2019', 'DD-MON-YYYY'), TO_DATE('23-DEC-2024', 'DD-MON-YYYY'), 'Neplatit');
+INSERT INTO Facturi VALUES (3, 1, 14, 1700, TO_DATE('12-DEC-2020', 'DD-MON-YYYY'), TO_DATE('15-FEB-2025', 'DD-MON-YYYY'), 'Neplatit');
+INSERT INTO Facturi VALUES (4, 1, 14, 2700, TO_DATE('01-APR-2019', 'DD-MON-YYYY'), TO_DATE('23-DEC-2024', 'DD-MON-YYYY'), 'Neplatit');
 
 INSERT INTO Informatii_clienti VALUES(14, 'NumeTest3', 'PrenumeTest3', '1111111111113', '0711111113');
 INSERT INTO Clienti Values(15, 14, 'TestUsername3' , 'testpass3', 'test3@yahoo');
@@ -395,4 +397,89 @@ END;
 
 COMMIT;
 
+
+
+---------------------------------------------------------------------------10-----------------------------------------------------------------
+
+
+SELECT * FROM Muncitori;
+SELECT * FROM informatii_muncitori;
    
+
+CREATE OR REPLACE TRIGGER cerinta_10
+   BEFORE INSERT OR UPDATE OR DELETE ON Muncitori
+BEGIN
+   IF (TO_CHAR(SYSDATE, 'D') = 1) THEN
+      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Duminica!');  
+   ELSIF (TO_CHAR(SYSDATE, 'D') = 7) THEN
+      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Sambata!');
+   ELSIF ((TO_CHAR(SYSDATE, 'D') = 6) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
+      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza vinerea inafara orelor 8:00-16:00');
+   ELSIF (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 20) THEN
+      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza in timpul saptamanii inafara orelor 8:00-20:00');
+   END IF;
+END;
+
+INSERT INTO Muncitori VALUES(14, NULL, 5000, TO_DATE('13-DEC-2017', 'DD-MON-YYYY'), 1000);
+
+
+
+---------------------------------------------------------------------------11-----------------------------------------------------------------
+
+SELECT * FROM Informatii_Bancare;
+SELECT * FROM Facturi;
+
+CREATE OR REPLACE TRIGGER cerinta_11
+   BEFORE UPDATE OF status ON Facturi
+   FOR EACH ROW
+DECLARE
+v_sold_curent Informatii_Bancare.sold_curent%TYPE;
+BEGIN
+
+   IF :NEW.status = 'Platit' THEN
+      SELECT sold_curent
+      INTO v_sold_curent
+      FROM Informatii_Bancare
+      WHERE cod_client = :NEW.cod_client;
+   
+      IF v_sold_curent < :NEW.total THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Clientul nu dispune de suficienti bani pentru a plati factura!');
+      END IF;
+    END IF;
+    
+    EXCEPTION   --pentru cazul in care clientul nu are inserare in informatii_bancare
+       WHEN NO_DATA_FOUND THEN RAISE_APPLICATION_ERROR(-20001, 'Clientul nu are informatiile bancare setate!');
+END;
+
+UPDATE Facturi SET status = 'Platit' WHERE cod_client = 15; --ne trimite in exceptie pentru ca nu exista in tableul Informatii_Bancare un client cu codul 15
+UPDATE Facturi SET status = 'Platit' WHERE cod_client = 10;    --exista inserare in Informatii_Clienti pentru clientul 10, dar nu dispune de suficienti bani
+
+ROLLBACK;
+COMMIT;
+   
+   
+
+---------------------------------------------------------------------------12-----------------------------------------------------------------
+
+CREATE OR REPLACE TRIGGER cerinta_12
+   BEFORE CREATE OR DROP OR ALTER ON SCHEMA
+DECLARE
+v_operation VARCHAR(30) := SYS.SYSEVENT;
+v_table_name VARCHAR2(30) := SYS.DICTIONARY_OBJ_NAME;
+v_user VARCHAR(50) := SYS.LOGIN_USER;
+BEGIN
+   IF v_user != 'SYSTEM' THEN
+      IF v_operation = 'CREATE' THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa creati tabele noi! Tabelul ' || v_table_name || ' nu a fost creat.');
+      ELSIF v_operation = 'ALTER' THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa modificati tabele! Tabelul ' || v_table_name || ' nu a fost modificat.');
+      ELSIF v_operation = 'DROP' THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa stergeti tabele! Tabelul ' || v_table_name || ' nu a fost sters.');
+      END IF;
+   END IF;
+END;
+
+
+CREATE TABLE test (utilizator VARCHAR2(30), nume_bd VARCHAR2(50), eveniment VARCHAR2(20), nume_obiect VARCHAR2(30), data DATE);
+ALTER TABLE Muncitori ADD TestColumn VARCHAR2(50);
+DROP TABLE Clienti;

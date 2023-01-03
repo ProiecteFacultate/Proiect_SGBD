@@ -17,3 +17,12 @@ Daca termenul de plata nu a fost depasit, dar totalul facturii este mai mic deca
 cardurile  (numarul si codul de securitate al acestora) detinute de acest client, daca factura pe numele lui emisa pe Romania (daca sunt mai multe astfel de facturi 
 cel putin una trebuie sa aiba statusul 'Neplatit') este Neplatita si soldul contului mai mare de 2000. (conditia de daca se aplica doar pt afisarea 
 cardurilor, nu si pt actualizarea facturilor)
+
+10. Definiti un trigger care sa nu permita angajarea, concedierea sau modificarea contractelor de munca a muncitorilor (adica sa nu permita actualizari asupra tabelei
+Muncitori) in afara programului de lucuru, acesta fiind Luni-Joi intra 8:00 - 20:00 si Vineri intre 8:00 - 16:00.
+
+11. Definiti un trigger care sa nu permita plata facturilor (actualizarea lor ca fiind 'Platit') daca totalul acestora este mai mare decat soldul curent al clientului.
+Daca clientul nu are setate informatiile bancare (nu exista in Informatii_Clienti nicio inserare care sa aiba cod_client al celui caruia ii apartine factura), 
+se va crea o exceptie.
+
+12. Definiti un trigger care sa permita crearea, stergerea si modificarea structurii tabelelor doar utilizatorului 'SYSTEM'.
