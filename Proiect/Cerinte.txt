@@ -2,7 +2,7 @@
 adresa in cel putin un oras care se regaseste in tabelul Adrese, dar nu se regaseste printre cele data. Pentru fiecare client, pentru fiecare astfel de oras sa se 
 afiseze emailul si orasul respectiv, iar daca nu exista niciun astfel de oras sa se afiseze "Nu exista niciun oras".
 
-7. Sa se afiseze numele si prenumele muncitorilor care au fost sunt desemnati sa intervina la interventii survenite in urma plangerilor depuse de clienti care au cel
+7. Sa se afiseze numele si prenumele muncitorilor care sunt desemnati sa intervina la interventii survenite in urma plangerilor depuse de clienti care au cel
 putin 'v_numar_minim_plangeri' plangeri depuse in urma in care au fost interventii (sau urmeaza sa fie), 'v_numar_minim_plangeri' fiind un parametru al procedurii, 
 cat si numele de utilizator al acestor clienti. Daca despre un anumit muncitor nu se cunosc informatii (numele si prenumele) nu se va afisa nimic. Daca pentru un
 client nu se cunosc informatii despre niciunul dintre muncitorii desemnati sa-i rezolve plangerile, sa se precizeze acest lucru. Daca nu exista niciun client care
@@ -19,7 +19,7 @@ cel putin una trebuie sa aiba statusul 'Neplatit') este Neplatita si soldul cont
 cardurilor, nu si pt actualizarea facturilor)
 
 10. Definiti un trigger care sa nu permita angajarea, concedierea sau modificarea contractelor de munca a muncitorilor (adica sa nu permita actualizari asupra tabelei
-Muncitori) in afara programului de lucuru, acesta fiind Luni-Joi intra 8:00 - 20:00 si Vineri intre 8:00 - 16:00.
+Muncitori) in afara programului de lucru, acesta fiind Luni-Joi intre 8:00 - 20:00 si Vineri intre 8:00 - 16:00.
 
 11. Definiti un trigger care sa nu permita plata facturilor (actualizarea lor ca fiind 'Platit') daca totalul acestora este mai mare decat soldul curent al clientului.
 Daca clientul nu are setate informatiile bancare (nu exista in Informatii_Clienti nicio inserare care sa aiba cod_client al celui caruia ii apartine factura), 

@@ -52,6 +52,8 @@ data_expirare_card DATE NOT NULL,
 cod_securitate_card NUMBER(4) NOT NULL,
 CONSTRAINT PK_Carduri_Bancare PRIMARY KEY(cod_card_bancar, cod_informatii_bancare, cod_client),
 CONSTRAINT FK_Cod_Informatii_Bancare FOREIGN KEY(cod_informatii_bancare, cod_client) REFERENCES Informatii_Bancare(cod_informatii_bancare, cod_client));
+
+
 - ADRESE:
 
 CREATE TABLE ADRESE(
@@ -204,7 +206,7 @@ INSERT INTO Informatii_clienti
 VALUES(Secventa.nextval, 'NumeTest3', 'PrenumeTest3', '1111111111113', '0711111113');
 
 
-- CLIENT
+- CLIENTI
 
 INSERT INTO Clienti 
 VALUES (Secventa.nextval, 1, 'marian08', 'parolamarian', 'marian08@yahoo.com');
@@ -566,6 +568,8 @@ INSERT INTO Interventii
 VALUES (Secventa.nextval, TO_DATE('23-APR-2023', 'DD-MON-YYYY'), 'Siguranta sarita', 'Neinceputa');
 INSERT INTO Interventii
 VALUES (Secventa.nextval, TO_DATE('25-APR-2020', 'DD-MON-YYYY'), 'Scurgere de gaze', 'Finalizata');
+
+
 - DOCUMENTE
 
 INSERT INTO Documente
@@ -673,12 +677,11 @@ BEGIN
       END LOOP;    
 END;
 
-
+            
 DECLARE
 BEGIN
    cerinta_6;
 END;
-
 
 
 7. 
@@ -915,11 +918,11 @@ END;
 CREATE OR REPLACE TRIGGER cerinta_10
    BEFORE INSERT OR UPDATE OR DELETE ON Muncitori
 BEGIN
-   IF (TO_CHAR(SYSDATE, 'D') = 1) THEN
+   IF (TO_CHAR(SYSDATE, 'D') = 7) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Duminica!');  
-   ELSIF (TO_CHAR(SYSDATE, 'D') = 7) THEN
+   ELSIF (TO_CHAR(SYSDATE, 'D') = 6) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Sambata!');
-   ELSIF ((TO_CHAR(SYSDATE, 'D') = 6) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
+   ELSIF ((TO_CHAR(SYSDATE, 'D') = 5) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza vinerea inafara orelor 8:00-16:00');
    ELSIF (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 20) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza in timpul saptamanii inafara orelor 8:00-20:00');
@@ -988,5 +991,268 @@ DROP TABLE Clienti;
 
 
 
+
+
+
+13.
+
+
+CREATE OR REPLACE PACKAGE pachet_cerinta_13 AS
+   PROCEDURE cerinta_6;
+   PROCEDURE cerinta_7(v_numar_minim_plangeri IN NUMBER); 
+   FUNCTION cerinta_8(v_reducere IN NUMBER) RETURN NUMBER; 
+   PROCEDURE cerinta_9(v_nume Informatii_Clienti.nume%TYPE, v_prenume Informatii_Clienti.prenume%TYPE);
+END pachet_cerinta_13;
+
+
+
+
+
+CREATE OR REPLACE PACKAGE BODY pachet_cerinta_13 AS
+
+PROCEDURE cerinta_6 IS
+   TYPE vector_orase IS VARRAY(20) OF Adrese.oras%TYPE;
+   TYPE tabel_orase IS TABLE OF Adrese.oras%TYPE INDEX BY PLS_INTEGER;
+   TYPE tabel_clienti IS TABLE OF clienti.email%TYPE INDEX BY PLS_INTEGER;
+   v_vector_orase vector_orase := vector_orase('Chisinau', 'Craiova', 'Bucuresti', 'Iasi', 'Bacau', 'Kiev', 'Beijing');
+   v_tabel_orase tabel_orase;
+   v_tabel_clienti tabel_clienti;     --retine id-ul pt un client
+   v_numar_adrese NUMBER(4);
+   v_minim_o_adresa BOOLEAN;
+   v_email Clienti.email%TYPE;
+   j NUMBER(4);
+BEGIN
+
+      SELECT DISTINCT oras          --punem toate orasele in v_tabel_orase
+      BULK COLLECT INTO v_tabel_orase
+      FROM Adrese;
+             
+      FOR i IN v_vector_orase.FIRST..v_vector_orase.LAST LOOP      --scoatem din v_tabel_orase orasele care sunt in v_vector_orase
+         j := v_tabel_orase.FIRST;
+         WHILE(j IS NOT NULL) LOOP
+            IF v_vector_orase(i) = v_tabel_orase(j) THEN
+               v_tabel_orase.DELETE(j);
+               EXIT;
+            END IF;
+            j := v_tabel_orase.NEXT(j);
+         END LOOP;
+      END LOOP;
+      
+      SELECT cod_client        
+      BULK COLLECT INTO v_tabel_clienti
+      FROM Clienti;
+      
+      FOR i IN v_tabel_clienti.FIRST..v_tabel_clienti.LAST LOOP
+         v_minim_o_adresa := FALSE;
+         j := v_tabel_orase.FIRST;
+         
+         SELECT email 
+         INTO v_email
+         FROM Clienti
+         WHERE cod_client = v_tabel_clienti(i);
+         
+         WHILE(j IS NOT NULL) LOOP
+            v_numar_adrese := 0;
+            
+             SELECT NVL2((SELECT COUNT(*)
+                          FROM Adrese
+                          WHERE cod_client = v_tabel_clienti(i)
+                          AND oras = v_tabel_orase(j)
+                          GROUP BY oras), (SELECT COUNT(*)
+                                           FROM Adrese
+                                           WHERE cod_client = v_tabel_clienti(i)
+                                           AND oras = v_tabel_orase(j)
+                                           GROUP BY oras), 0)
+            INTO v_numar_adrese
+            FROM dual;
+            
+            IF v_numar_adrese > 0 THEN
+               DBMS_OUTPUT.PUT_LINE('Clientul cu mailul ' || v_email || ' are adresa in orasul ' || v_tabel_orase(j));
+               v_minim_o_adresa := TRUE;
+            END IF;
+            
+            j := v_tabel_orase.NEXT(j);
+         END LOOP;
+         
+         IF v_minim_o_adresa = FALSE THEN
+            DBMS_OUTPUT.PUT_LINE('Clientul cu mailul ' || v_email || ' nu are nicio adresa in orasele date');
+         END IF;
+      END LOOP;    
+END;
+
+
+
+PROCEDURE cerinta_7(v_numar_minim_plangeri IN NUMBER) IS
+   CURSOR c_clienti (numar_minim NUMBER) IS   --retine clientii care au depus cel putin numar_minim plangeri in urma carora au rezultat interventii
+      SELECT DISTINCT p.cod_client, c.nume_utilizator
+      FROM Documente d, Plangeri p, Clienti c
+      WHERE d.cod_client = p.cod_client
+      AND d.cod_plangere = p.cod_plangere
+      AND d.cod_client = c.cod_client
+      GROUP BY p.cod_client, c.nume_utilizator
+      HAVING COUNT(p.cod_plangere) > numar_minim;
+      
+   CURSOR c_muncitori IS                      --retine numele si prenumele si codul tuturor muncitorilor
+      SELECT m.cod_muncitor cod, ic.nume nume, ic.prenume prenume
+      FROM Muncitori m, Informatii_Muncitori ic
+      WHERE m.cod_informatii_muncitor = ic.cod_informatii_muncitor;   
+      
+v_cod_client Clienti.cod_client%TYPE;
+v_nume_utilizator Clienti.nume_utilizator%TYPE;
+v_muncitor_lucreaza NUMBER(4);
+v_cunosc_informatii BOOLEAN;
+v_exista_clienti BOOLEAN := FALSE;
+BEGIN
+   OPEN c_clienti(v_numar_minim_plangeri);
+   LOOP
+      FETCH c_clienti INTO v_cod_client, v_nume_utilizator;
+      EXIT WHEN c_clienti%NOTFOUND;
+      v_exista_clienti := TRUE;
+      v_cunosc_informatii := FALSE;
+      
+      FOR muncitor IN c_muncitori LOOP
+         v_cunosc_informatii := TRUE;
+         SELECT NVL2((SELECT COUNT(*)
+                      FROM Documente 
+                      WHERE cod_muncitor = muncitor.cod
+                      AND cod_client = v_cod_client), (SELECT COUNT(*)
+                                                       FROM Documente 
+                                                       WHERE cod_muncitor = muncitor.cod
+                                                       AND cod_client = v_cod_client), 0)
+         INTO v_muncitor_lucreaza
+         FROM dual;
+         
+         IF v_muncitor_lucreaza > 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Pentru clientul ' || v_nume_utilizator || ' lucreaza muncitorul ' || muncitor.nume || ' ' ||  muncitor.prenume);
+         END IF;
+      END LOOP;
+      
+      IF v_cunosc_informatii = FALSE THEN
+         DBMS_OUTPUT.PUT_LINE('Nu se cunoaste numele si prenumele niciunuia dintre muncitorii care au desemnati sa rezolve plangerile clientului ' || v_nume_utilizator);
+      END IF;
+   END LOOP;
+   
+   CLOSE c_clienti;
+   
+   IF v_exista_clienti = FALSE THEN
+      DBMS_OUTPUT.PUT_LINE('Nu exista niciun client care sa depuna minim ' || v_numar_minim_plangeri || ' plangeri in urma carora sa exista interventii');
+   END IF;
+END;
+
+
+
+FUNCTION cerinta_8(v_reducere IN NUMBER) RETURN NUMBER IS
+   CURSOR c_facturi IS
+   SELECT f.cod_factura cod_factura, f.cod_adresa cod_adresa, f.cod_client cod_client, f.total total, f.data_eliberare data_eliberare, f.termen_plata termen_plata, f.status status, a.tara tara, a.oras oras, a.strada strada, a.numar numar, c.nume_utilizator nume_utilizator
+   FROM Facturi f, Adrese a, Clienti c
+   WHERE f.cod_client = a.cod_client
+   AND f.cod_adresa = a.cod_adresa
+   AND a.cod_client = c.cod_client;
+
+v_reducere_totala NUMBER := 0;
+v_today DATE;
+TERMEN_PLATA_DEPASIT EXCEPTION;
+TOTAL_SUB_REDUCERE EXCEPTION;
+FACTURA_DEJA_PLATITA EXCEPTION;
+BEGIN
+
+   SELECT SYSDATE 
+   INTO v_today
+   FROM dual;
+   
+   FOR factura IN c_facturi LOOP
+       DBMS_OUTPUT.PUT_LINE('Pentru clientul ' || factura.nume_utilizator || ' la adresa ' || factura.tara || ', ' || factura.oras || ', ' || factura.strada || ', ' || factura.numar || ' factura eliberata pe data de ' || factura.data_eliberare || ': ');
+      BEGIN
+         
+         IF factura.status = 'Platit' THEN RAISE FACTURA_DEJA_PLATITA;
+         ELSIF factura.termen_plata < v_today AND factura.status = 'Neplatit' THEN RAISE TERMEN_PLATA_DEPASIT;
+         ELSIF factura.total < v_reducere THEN RAISE TOTAL_SUB_REDUCERE;
+         ELSE  
+            v_reducere_totala := v_reducere_totala + v_reducere;     
+            DBMS_OUTPUT.PUT_LINE('Reducerea de ' || v_reducere || ' a fost aplicata!');
+            
+            UPDATE Facturi 
+            SET total = total - v_reducere
+            WHERE cod_factura = factura.cod_factura
+            AND cod_adresa = factura.cod_adresa
+            AND cod_client = factura.cod_client;
+         END IF;
+         
+         EXCEPTION 
+            
+            WHEN TERMEN_PLATA_DEPASIT THEN
+               DBMS_OUTPUT.PUT_LINE('Termenul de plata a fost depasit! Totalul nu a fost redus, inse termenul de plata a fost extins pentru 1 Ianuarie 2024');
+               
+               UPDATE Facturi 
+               SET termen_plata = TO_DATE('01-JAN-2024', 'DD-MON-YYYY')
+               WHERE cod_factura = factura.cod_factura
+               AND cod_adresa = factura.cod_adresa
+               AND cod_client = factura.cod_client;
+
+            WHEN TOTAL_SUB_REDUCERE THEN
+               v_reducere_totala := v_reducere_totala + factura.total;
+               DBMS_OUTPUT.PUT_LINE('Totalul de plata este mai mic decat reducerea, asa ca factura a fost actualizata ca fiind platita');
+               
+               UPDATE Facturi 
+               SET status = 'Platit'
+               WHERE cod_factura = factura.cod_factura
+               AND cod_adresa = factura.cod_adresa
+               AND cod_client = factura.cod_client;
+               
+            WHEN FACTURA_DEJA_PLATITA THEN
+               DBMS_OUTPUT.PUT_LINE('Factura a fost deja platita');
+      END;
+      DBMS_OUTPUT.PUT_LINE(' ');
+   END LOOP;
+   
+   RETURN v_reducere_totala;
+END;
+
+
+
+PROCEDURE cerinta_9(v_nume Informatii_Clienti.nume%TYPE, v_prenume Informatii_Clienti.prenume%TYPE) IS
+CURSOR c_carduri (cod_client_param Clienti.cod_client%TYPE) IS  
+      SELECT DISTINCT cb.numar_card, cb.cod_securitate_card
+      FROM Carduri_Bancare cb, Informatii_Bancare ib, Clienti c, Informatii_Clienti ic, Adrese a, Facturi f
+      WHERE cb.cod_client = cod_client_param
+      AND ib.cod_client = cod_client_param
+      AND ib.sold_curent > 2000
+      AND a.cod_client = cod_client_param
+      AND a.tara = 'Romania'
+      AND f.cod_client = cod_client_param
+      AND f.cod_adresa = a.cod_adresa
+      AND f.status = 'Neplatit';
+
+v_cod_client Clienti.cod_client%TYPE;
+v_numar_card Carduri_bancare.numar_card%TYPE;
+v_cod_securitate_card Carduri_bancare.cod_securitate_card%TYPE;
+v_index_card NUMBER(4) := 1;
+BEGIN
+
+   SELECT c.cod_client      --aflare cod client
+   INTO v_cod_client
+   FROM Informatii_Clienti ic, Clienti c
+   WHERE c.cod_informatii_client = ic.cod_informatii_client
+   AND ic.nume = v_nume
+   AND ic.prenume = v_prenume;
+   
+   OPEN c_carduri(v_cod_client);
+   LOOP 
+      FETCH c_carduri INTO v_numar_card, v_cod_securitate_card;
+      EXIT WHEN c_carduri%NOTFOUND;
+      DBMS_OUTPUT.PUT_LINE('Cardul ' || v_index_card || ': numar - ' || v_numar_card || ', cod securitate - ' || v_cod_securitate_card);
+      v_index_card := v_index_card + 1;
+   END LOOP;
+   
+   UPDATE Facturi
+   SET status = 'Platit'
+   WHERE cod_client = v_cod_client;
+   
+   EXCEPTION 
+      WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE ('NO DATA FOUND!');
+      WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE ('PREA MULTE REZULTATE!');
+      WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE ('ALTA EROARE!');
+END;
+END pachet_cerinta_13;
 
 

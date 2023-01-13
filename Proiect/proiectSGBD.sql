@@ -1,3 +1,7 @@
+
+
+------------------------INSERTURILE FACUTE AICI NU AU FOST COMMITED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!-----------------------------
+
 SELECT * 
 FROM Clienti;
 
@@ -86,7 +90,7 @@ BEGIN
          WHILE(j IS NOT NULL) LOOP
             v_numar_adrese := 0;
             
-             SELECT NVL2((SELECT COUNT(*)
+             SELECT NVL2((SELECT COUNT(*)   
                           FROM Adrese
                           WHERE cod_client = v_tabel_clienti(i)
                           AND oras = v_tabel_orase(j)
@@ -117,6 +121,7 @@ DECLARE
 BEGIN
    cerinta_6;
 END;
+
         
         
         
@@ -192,6 +197,7 @@ END;
 
 
 
+
 --------------------------------------------------------------------8----------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION cerinta_8(v_reducere IN NUMBER) RETURN NUMBER IS
@@ -252,8 +258,11 @@ BEGIN
                AND cod_adresa = factura.cod_adresa
                AND cod_client = factura.cod_client;
                
+               
             WHEN FACTURA_DEJA_PLATITA THEN
                DBMS_OUTPUT.PUT_LINE('Factura a fost deja platita');
+            WHEN OTHERS THEN
+               DBMS_OUTPUT.PUT_LINE('EROARE NEASTEPTATA');
       END;
       DBMS_OUTPUT.PUT_LINE(' ');
    END LOOP;
@@ -270,7 +279,7 @@ BEGIN
    DBMS_OUTPUT.PUT_LINE('Reducere totala: ' || v_reducere_totala);
 END;
 
-
+ROLLBACK;
 SELECT * FROM CLIENTI;
 
 SELECT * FROM ADRESE;
@@ -279,7 +288,7 @@ SELECT * FROM Facturi;
 
 ROLLBACK;
 
-
+DROP TRIGGER cerinta_11;
 --------------------------------------------------------9-------------------------------------------------------------
 
 SELECT * FROM Clienti;
@@ -314,8 +323,8 @@ INSERT INTO Informatii_clienti VALUES(14, 'NumeTest3', 'PrenumeTest3', '11111111
 INSERT INTO Clienti Values(15, 14, 'TestUsername3' , 'testpass3', 'test3@yahoo');
 INSERT INTO Adrese VALUES (1, 15, 'Romania', 'Craiova', 'Stadionului', 80);
 INSERT INTO Facturi VALUES (1, 1, 15, 3000, TO_DATE('12-DEC-2020', 'DD-MON-YYYY'), TO_DATE('15-FEB-2025', 'DD-MON-YYYY'), 'Neplatit');
-
-
+COMMIT;
+ROLLBACK;
 
 CREATE OR REPLACE PROCEDURE cerinta_9(v_nume Informatii_Clienti.nume%TYPE, v_prenume Informatii_Clienti.prenume%TYPE) IS
 CURSOR c_carduri (cod_client_param Clienti.cod_client%TYPE) IS  
@@ -406,21 +415,21 @@ SELECT * FROM Muncitori;
 SELECT * FROM informatii_muncitori;
    
 
-CREATE OR REPLACE TRIGGER cerinta_10
+CREATE OR REPLACE TRIGGER cerinta_10   
    BEFORE INSERT OR UPDATE OR DELETE ON Muncitori
 BEGIN
-   IF (TO_CHAR(SYSDATE, 'D') = 1) THEN
+   IF (TO_CHAR(SYSDATE, 'D') = 7) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Duminica!');  
-   ELSIF (TO_CHAR(SYSDATE, 'D') = 7) THEN
+   ELSIF (TO_CHAR(SYSDATE, 'D') = 6) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Sambata!');
-   ELSIF ((TO_CHAR(SYSDATE, 'D') = 6) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
+   ELSIF ((TO_CHAR(SYSDATE, 'D') = 5) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza vinerea inafara orelor 8:00-16:00');
-   ELSIF (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 20) THEN
+   ELSIF (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 12) THEN
       RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza in timpul saptamanii inafara orelor 8:00-20:00');
    END IF;
 END;
 
-INSERT INTO Muncitori VALUES(14, NULL, 5000, TO_DATE('13-DEC-2017', 'DD-MON-YYYY'), 1000);
+INSERT INTO Muncitori VALUES(14, NULL, 5000, TO_DATE('13-DEC-2017', 'DD-MON-YYYY'), 1000, NULL);
 
 
 
@@ -454,6 +463,7 @@ END;
 UPDATE Facturi SET status = 'Platit' WHERE cod_client = 15; --ne trimite in exceptie pentru ca nu exista in tableul Informatii_Bancare un client cu codul 15
 UPDATE Facturi SET status = 'Platit' WHERE cod_client = 10;    --exista inserare in Informatii_Clienti pentru clientul 10, dar nu dispune de suficienti bani
 
+DROP TRIGGER cerinta_11;
 ROLLBACK;
 COMMIT;
    
@@ -484,7 +494,7 @@ CREATE TABLE test (utilizator VARCHAR2(30), nume_bd VARCHAR2(50), eveniment VARC
 ALTER TABLE Muncitori ADD TestColumn VARCHAR2(50);
 DROP TABLE Clienti;
 
-
+DROP TRIGGER CERINTA_12;
 
 
 
@@ -537,9 +547,6 @@ CREATE OR REPLACE PACKAGE pachet_cerinta_13 AS
    PROCEDURE cerinta_7(v_numar_minim_plangeri IN NUMBER); 
    FUNCTION cerinta_8(v_reducere IN NUMBER) RETURN NUMBER; 
    PROCEDURE cerinta_9(v_nume Informatii_Clienti.nume%TYPE, v_prenume Informatii_Clienti.prenume%TYPE);
---   TRIGGER cerinta_10;
---   TRIGGER cerinta_11;
---   TRIGGER cerinta_12;
 END pachet_cerinta_13;
 
 
@@ -791,65 +798,6 @@ BEGIN
       WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE ('PREA MULTE REZULTATE!');
       WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE ('ALTA EROARE!');
 END;
-
-
-
---TRIGGER cerinta_10 
---   BEFORE INSERT OR UPDATE OR DELETE ON Muncitori
---BEGIN
---   IF (TO_CHAR(SYSDATE, 'D') = 1) THEN
---      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Duminica!');  
---   ELSIF (TO_CHAR(SYSDATE, 'D') = 7) THEN
---      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza Sambata!');
---   ELSIF ((TO_CHAR(SYSDATE, 'D') = 6) AND (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 16)) THEN
---      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza vinerea inafara orelor 8:00-16:00');
---   ELSIF (TO_CHAR(SYSDATE,'HH24') NOT BETWEEN 8 AND 20) THEN
---      RAISE_APPLICATION_ERROR(-20001,'Tabelul nu se poate actualiza in timpul saptamanii inafara orelor 8:00-20:00');
---   END IF;
---END;
---
---
---
---TRIGGER cerinta_11
---   BEFORE UPDATE OF status ON Facturi
---   FOR EACH ROW
---DECLARE
---v_sold_curent Informatii_Bancare.sold_curent%TYPE;
---BEGIN
---
---   IF :NEW.status = 'Platit' THEN
---      SELECT sold_curent
---      INTO v_sold_curent
---      FROM Informatii_Bancare
---      WHERE cod_client = :NEW.cod_client;
---   
---      IF v_sold_curent < :NEW.total THEN
---         RAISE_APPLICATION_ERROR(-20001, 'Clientul nu dispune de suficienti bani pentru a plati factura!');
---      END IF;
---    END IF;
---    
---    EXCEPTION   --pentru cazul in care clientul nu are inserare in informatii_bancare
---       WHEN NO_DATA_FOUND THEN RAISE_APPLICATION_ERROR(-20001, 'Clientul nu are informatiile bancare setate!');
---END;
---
---
---
---TRIGGER cerinta_12
---   BEFORE CREATE OR DROP OR ALTER ON SCHEMA
---DECLARE
---v_operation VARCHAR(30) := SYS.SYSEVENT;
---v_table_name VARCHAR2(30) := SYS.DICTIONARY_OBJ_NAME;
---v_user VARCHAR(50) := SYS.LOGIN_USER;
---BEGIN
---   IF v_user != 'SYSTEM' THEN
---      IF v_operation = 'CREATE' THEN
---         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa creati tabele noi! Tabelul ' || v_table_name || ' nu a fost creat.');
---      ELSIF v_operation = 'ALTER' THEN
---         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa modificati tabele! Tabelul ' || v_table_name || ' nu a fost modificat.');
---      ELSIF v_operation = 'DROP' THEN
---         RAISE_APPLICATION_ERROR(-20001, 'Nu aveti dreptul sa stergeti tabele! Tabelul ' || v_table_name || ' nu a fost sters.');
---      END IF;
---   END IF;
---END;
-
 END pachet_cerinta_13;
+
+EXECUTE pachet_cerinta_13.cerinta_6;
